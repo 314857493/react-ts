@@ -1,5 +1,6 @@
-import React from "react";
-import { Form, Input, Button } from "antd";
+import type { MutableRefObject } from "react";
+import React, { useRef } from "react";
+import { Form, Button } from "antd";
 
 interface SearchProps {
   onSearch: () => void;
@@ -7,6 +8,13 @@ interface SearchProps {
   children: any;
   createBtnTitle?: string;
   createBtnFunc?: () => any;
+  form: SearchForm;
+}
+
+interface SearchForm {
+  getValue: () => MutableRefObject<any>;
+  setForm: (value: any) => any;
+  clearForm: () => any;
 }
 
 interface SearchItemProps {
@@ -16,17 +24,23 @@ interface SearchItemProps {
   br?: boolean;
 }
 
-function Search({
+const Search = ({
   onSearch,
   onClear,
   children,
   createBtnTitle,
   createBtnFunc,
-}: SearchProps) {
+  form,
+}: SearchProps) => {
   const [searchForm] = Form.useForm();
   const clear = () => {
-    onClear();
     searchForm.resetFields();
+    form.clearForm();
+    onClear();
+  };
+  const submit = () => {
+    form.setForm(searchForm.getFieldsValue());
+    onSearch();
   };
   return (
     <div style={{ padding: 12, clear: "both" }}>
@@ -42,7 +56,7 @@ function Search({
           {children}
         </div>
         <div style={{ float: "left" }}>
-          <Button type="primary" onClick={onSearch}>
+          <Button type="primary" onClick={submit}>
             查询
           </Button>
           <Button style={{ marginLeft: 10 }} onClick={clear}>
@@ -57,16 +71,32 @@ function Search({
       </Form>
     </div>
   );
-}
+};
 
-Search.Item = function ({ name, label, children, br }: SearchItemProps) {
+Search.Item = ({ name, label, children, br }: SearchItemProps) => {
   return (
-    <div style={{ width: 400, marginRight: 10 }}>
-      <Form.Item label={label} name={name}>
-        {children}
-      </Form.Item>
-    </div>
+    <>
+      {br && <br />}
+      <div style={{ width: 400, marginRight: 10 }}>
+        <Form.Item label={label} name={name}>
+          {children}
+        </Form.Item>
+      </div>
+    </>
   );
+};
+
+Search.useSearchForm = (): SearchForm => {
+  const formValue: MutableRefObject<any> = useRef({});
+  const getValue = () => formValue.current;
+  const setForm = (value: any) => (formValue.current = value);
+  const clearForm = () => (formValue.current = {});
+  const searchForm = {
+    getValue,
+    setForm,
+    clearForm,
+  };
+  return searchForm;
 };
 
 export default Search;
